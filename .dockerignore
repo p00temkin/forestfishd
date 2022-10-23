@@ -1,0 +1,8 @@
+.aws
+.env
+.cache
+.git
+.github
+node_modules
+Dockerfile
+**/*.class
