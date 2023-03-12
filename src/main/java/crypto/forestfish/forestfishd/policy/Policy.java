@@ -12,6 +12,14 @@ public class Policy {
 		this.put(EVMChain.ETHEREUM.toString(), true);
 	}};
 	
+	// geoip access policy
+	@SuppressWarnings("serial")
+	private HashMap<String, Boolean> allowedCC = new HashMap<>() {{
+		this.put("SE", true);
+		this.put("US", true);
+		this.put("JP", true);
+	}};
+	
 	private HashMap<String, Role> accounts;
 
 	public Policy() {
@@ -32,6 +40,14 @@ public class Policy {
 
 	public void setAccounts(HashMap<String, Role> accounts) {
 		this.accounts = accounts;
+	}
+
+	public HashMap<String, Boolean> getAllowedCC() {
+		return allowedCC;
+	}
+
+	public void setAllowedCC(HashMap<String, Boolean> allowedCC) {
+		this.allowedCC = allowedCC;
 	}
 	
 }

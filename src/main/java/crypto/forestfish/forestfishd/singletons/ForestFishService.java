@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.web3j.crypto.CryptoUtils;
 
 import com.maxmind.db.CHMCache;
 import com.maxmind.db.Reader.FileMode;
@@ -15,7 +16,10 @@ import com.maxmind.geoip2.model.CityResponse;
 import com.maxmind.geoip2.record.Country;
 
 import crypto.forestfish.forestfishd.Settings;
+import crypto.forestfish.forestfishd.policy.Policy;
 import crypto.forestfish.objects.evm.connector.EVMBlockChainUltraConnector;
+import crypto.forestfish.utils.CryptUtils;
+import crypto.forestfish.utils.FilesUtils;
 import crypto.forestfish.utils.SystemUtils;
 import crypto.forestfish.enums.BlockchainType;
 import crypto.forestfish.enums.evm.EVMChain;
@@ -31,7 +35,7 @@ public class ForestFishService {
 	private static HashMap<String, String> challenges = new HashMap<>();
 
 	// JWT secret
-	private static String secret = "asdfSFS34wfsdfsdfSDSD32dfsddDDerQSNCK34SOWEK5354fdgdf4";
+	private static String secret;
 
 	// Blockchain connectors
 	private static EVMBlockChainUltraConnector ultra_connector;
@@ -39,6 +43,9 @@ public class ForestFishService {
 	// Support
 	private static DatabaseReader geo2CityService;
 	private int geoIPcacheSize = 8096;
+	
+	// Policy
+	private static Policy policy;
 
 	public ForestFishService() {
 		super();
@@ -48,14 +55,36 @@ public class ForestFishService {
 	public ForestFishService(Settings s) {
 		super();
 		settings = s;
+		
+		LOGGER.info("Launching ForestFishService");
 
+		/**
+		 * Generate/get secret unless exists
+		 */
+		File f = new File("secret");
+		if (!f.exists()) {
+			secret = CryptUtils.generateRandomString();
+			FilesUtils.writeToFileUNIXNoException(secret, "secret");
+		} else {
+			String temp_secret = FilesUtils.readAllFromFile(f);
+			if ((null != temp_secret) && (temp_secret.length() == 54)) {
+				secret = temp_secret;
+			} else {
+				LOGGER.error("Found invalid secret file content of length " + temp_secret.length() + ": " + temp_secret);
+				SystemUtils.halt();
+			}
+		}
+		LOGGER.info("Moving forward with secret: " + secret);
+		
+		/**
+		 * Blockchain support
+		 */
 		if (s.isNftmode() || s.isTokenmode()) {
 			ultra_connector = new EVMBlockChainUltraConnector(BlockchainType.PUBLIC,
 					new HashMap<String, Boolean>() {{
 						this.put(EVMChain.POLYGON.toString(), true);
 						this.put(EVMChain.ETHEREUM.toString(), true);
 					}});
-
 		}
 
 		/*
@@ -78,6 +107,12 @@ public class ForestFishService {
 			LOGGER.error("Unable to launch geoIP2 City service");
 			SystemUtils.halt();
 		}
+		
+		/**
+		 * Policy
+		 */
+		policy = new Policy();
+		
 	}
 
 	public static ForestFishService getInstance(Settings settings) {
@@ -148,6 +183,14 @@ public class ForestFishService {
 		} catch (Exception e) {
 			return "N/A";
 		}
+	}
+
+	public static Policy getPolicy() {
+		return policy;
+	}
+
+	public static void setPolicy(Policy policy) {
+		ForestFishService.policy = policy;
 	}
 
 }

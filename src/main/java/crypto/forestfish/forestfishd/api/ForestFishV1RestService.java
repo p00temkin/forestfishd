@@ -36,7 +36,7 @@ import crypto.forestfish.forestfishd.api.v1.ForestFishV1Response_knockknock;
 import crypto.forestfish.forestfishd.api.v1.ForestFishV1Response_protectedcontent;
 import crypto.forestfish.forestfishd.api.v1.ForestFishV1Response_status;
 import crypto.forestfish.forestfishd.singletons.ForestFishService;
-import crypto.forestfish.forestfishd.utils.JSONUtils;
+import crypto.forestfish.forestfishd.utils.LangUtils;
 import crypto.forestfish.objects.evm.EVMAccountBalance;
 import crypto.forestfish.objects.evm.EVMNftAccountBalance;
 import crypto.forestfish.objects.evm.EVMPortfolio;
@@ -58,10 +58,8 @@ public class ForestFishV1RestService {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response v1_status() {
 		LOGGER.info("v1_status()");
-
+		
 		ForestFishV1Response_status pb = new ForestFishV1Response_status("up");
-		//return JSONUtils.createJSONFromV1ForestFishStatusResponse(pb);
-
 		return Response
 				.status(200)
 				.header("Access-Control-Allow-Origin", "*")
@@ -69,7 +67,7 @@ public class ForestFishV1RestService {
 				.header("Access-Control-Allow-Credentials", "true")
 				.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, HEAD")
 				.header("Access-Control-Max-Age", "1209600")
-				.entity(JSONUtils.createJSONFromV1ForestFishStatusResponse(pb))
+				.entity(JSONUtils.createJSONFromPOJO(pb))
 				.build();
 
 	}
@@ -79,8 +77,9 @@ public class ForestFishV1RestService {
 	@Path("/v1/knockknock")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response v1_knockknock(@HeaderParam("X-Real-IP") String xrealIP, @Context HttpServletRequest request, String reqSTR) {
-
-		ForestFishV1Request_knockknock req = JSONUtils.createForestFishV1Request_knockknock(reqSTR);
+		LOGGER.info("v1_knockknock()");
+		
+		ForestFishV1Request_knockknock req = JSONUtils.createPOJOFromJSON(reqSTR, ForestFishV1Request_knockknock.class);
 		String delimiterchar = ";";
 		
 		if (null != req) {
@@ -96,13 +95,7 @@ public class ForestFishV1RestService {
 
 			if (NetUtils.isValidIPV4(remoteIP)) {
 				String cc = ForestFishService.lookupCountryCodeForIP(remoteIP);
-				if ("SE".equals(cc)) {
-					msg = "knack_knack";
-				} else if ("JP".equals(cc)) {
-					msg = "コン_コン";
-				} else {
-					msg = "knock_knock ";
-				}
+				msg = LangUtils.getCCGreeting(cc, ForestFishService.getPolicy());
 			}
 
 			String address = req.getAddress();
@@ -119,7 +112,7 @@ public class ForestFishV1RestService {
 				msg = msg + delimiterchar + remoteIP;
 			}
 
-			LOGGER.info("Replying to a knock: " + msg);
+			LOGGER.info("Replying to a knock from " + remoteIP + ": " + msg);
 			ForestFishV1Response_knockknock kk = new ForestFishV1Response_knockknock(msg);
 
 			return Response
@@ -129,7 +122,7 @@ public class ForestFishV1RestService {
 					.header("Access-Control-Allow-Credentials", "true")
 					.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, HEAD")
 					.header("Access-Control-Max-Age", "1209600")
-					.entity(JSONUtils.createJSONFromV1ForestFishKnockKnockResponse(kk))
+					.entity(JSONUtils.createJSONFromPOJO(kk))
 					.build();
 
 		} else {
@@ -151,6 +144,7 @@ public class ForestFishV1RestService {
 	@Path("/v1/knockknock")
 	public Response knockknock_options() {
 		LOGGER.info("OPTIONS req for /v1/knockknock");
+		
 		return Response.ok("")
 				.header("Access-Control-Allow-Origin", "*")
 				.header("Access-Control-Allow-Headers", "origin, content-type, accept, authorization")
@@ -165,6 +159,8 @@ public class ForestFishV1RestService {
 	@Path("/v1/getchallenge/{address}")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response v1_getchallenge(@PathParam("address") String address) {
+		LOGGER.info("v1_getchallenge()");
+		
 		address = address.toLowerCase();
 		String challenge = "";
 		boolean valid = false;
@@ -193,7 +189,7 @@ public class ForestFishV1RestService {
 				.header("Access-Control-Allow-Credentials", "true")
 				.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, HEAD")
 				.header("Access-Control-Max-Age", "1209600")
-				.entity(JSONUtils.createJSONFromV1ForestFishChallengeResponse(pb))
+				.entity(JSONUtils.createJSONFromPOJO(pb))
 				.build();
 	}
 
@@ -203,7 +199,9 @@ public class ForestFishV1RestService {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response v1_authenticate(String reqSTR) {
-		ForestFishV1Request_authenticate req = JSONUtils.createForestFishV1Request_authenticate(reqSTR);
+		LOGGER.info("v1_authenticate()");
+		
+		ForestFishV1Request_authenticate req = JSONUtils.createPOJOFromJSON(reqSTR, ForestFishV1Request_authenticate.class);
 		boolean valid = false;
 		boolean success = false;
 		String jwtToken = "";
@@ -350,7 +348,7 @@ public class ForestFishV1RestService {
 				.header("Access-Control-Allow-Credentials", "true")
 				.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 				.header("Access-Control-Max-Age", "1209600")
-				.entity(JSONUtils.createJSONFromV1ForestFishAuthenticateResponse(pb))
+				.entity(JSONUtils.createJSONFromPOJO(pb))
 				.build();
 	}
 
@@ -380,7 +378,7 @@ public class ForestFishV1RestService {
 		if (null != authorizationHeader) {
 			if (authorizationHeader.contains("Bearer ")) {
 				String jwtString = authorizationHeader.split(" ")[1];
-				System.out.println("jwtstring: " + jwtString);
+				LOGGER.info("Received jwt: " + jwtString);
 
 				String jwt_secret = ForestFishService.getSecret();
 				JWTSignedDecodeResult jwt_decoderesult = JWTUtils.decodeAndVerifyJWTUsingSecretKey(jwtString, jwt_secret, SignatureAlgorithm.HS256.getJcaName());
@@ -433,7 +431,7 @@ public class ForestFishV1RestService {
 				.header("Access-Control-Allow-Credentials", "true")
 				.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, HEAD")
 				.header("Access-Control-Max-Age", "1209600")
-				.entity(JSONUtils.createJSONFromV1ForestFishProtectedContent(protecteContent))
+				.entity(JSONUtils.createJSONFromPOJO(protecteContent))
 				.build();
 	}
 
