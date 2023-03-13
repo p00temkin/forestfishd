@@ -1,6 +1,7 @@
 package crypto.forestfish.forestfishd.policy;
 
 public enum Role {
-	USER,
+	CONSUMER,
+	CONTRIBUTOR,
 	ADMIN
 }

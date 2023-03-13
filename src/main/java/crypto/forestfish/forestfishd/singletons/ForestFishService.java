@@ -115,8 +115,9 @@ public class ForestFishService {
 		
 	}
 
-	public static ForestFishService getInstance(Settings settings) {
-		if (single_instance == null) single_instance = new ForestFishService(settings);
+	public static ForestFishService getInstance(Settings _settings, Policy _ffpolicy) {
+		if (null != _ffpolicy) policy = _ffpolicy;
+		if (single_instance == null) single_instance = new ForestFishService(_settings);
 		return single_instance;
 	}
 

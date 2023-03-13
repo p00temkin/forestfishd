@@ -11,9 +11,9 @@ public class LangUtils {
 
 	public static String getCCGreeting(String _cc, Policy _policy) {
 		if (null != _policy.getAllowedCC().get(_cc)) {
-			if ("SE".equals(_cc)) return "hej";
-			if ("JP".equals(_cc)) return "こんにちは";
-			if ("US".equals(_cc)) return "hello";
+			if ("SE".equals(_cc)) return "du har blivit noterad:";
+			if ("JP".equals(_cc)) return "あなたは指摘されました:";
+			if ("US".equals(_cc)) return "you have been noted:";
 		} else {
 			if ("US".equals(_cc)) return "turn back";
 		}

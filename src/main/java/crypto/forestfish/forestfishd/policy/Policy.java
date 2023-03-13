@@ -20,7 +20,9 @@ public class Policy {
 		this.put("JP", true);
 	}};
 	
-	private HashMap<String, Role> accounts;
+	private HashMap<String, Role> accounts = new HashMap<>() {{
+		this.put("0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266", Role.ADMIN); // https://hardhat.org/hardhat-network/docs/overview Account #0
+	}};
 
 	public Policy() {
 		super();

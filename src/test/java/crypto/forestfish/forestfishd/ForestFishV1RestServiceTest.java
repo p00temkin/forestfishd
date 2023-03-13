@@ -25,7 +25,7 @@ public class ForestFishV1RestServiceTest {
 		Settings settings = new Settings();
 		
 		// Launch a GitGo singleton if needed
-		ForestFishService.getInstance(settings);
+		ForestFishService.getInstance(settings, null);
 
 		// Launch an ApiService singleton if needed
 		ApiService.getInstance(6969);
@@ -117,7 +117,7 @@ public class ForestFishV1RestServiceTest {
 		settings.setTokenmode(true);
 		
 		// Launch a GitGo singleton if needed
-		ForestFishService.getInstance(settings);
+		ForestFishService.getInstance(settings, null);
 	
 		// Launch an ApiService singleton if needed
 		ApiService.getInstance(6969);

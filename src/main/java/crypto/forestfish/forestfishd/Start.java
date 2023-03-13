@@ -10,8 +10,10 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import crypto.forestfish.forestfishd.policy.Policy;
 import crypto.forestfish.forestfishd.singletons.ApiService;
 import crypto.forestfish.forestfishd.singletons.ForestFishService;
+import crypto.forestfish.forestfishd.utils.PolicyUtils;
 import crypto.forestfish.utils.SystemUtils;
 
 public class Start {
@@ -20,17 +22,19 @@ public class Start {
 
 	public static void main(String[] args) {
 		LOGGER.info("init()");
-
+		
+		// FFPOLICY
+		Policy ffpolicy = PolicyUtils.parsePolicyENV();
+		
 		// Initialize settings
 		Settings settings = parseCliArgs(args);
 		settings.sanityCheck();
 
 		// Launch a ForestFishService singleton if needed
-		ForestFishService.getInstance(settings);
+		ForestFishService.getInstance(settings, ffpolicy);
 
 		// Launch an ApiService singleton if needed
 		ApiService.getInstance(settings.getPort());
-
 	}
 
 
