@@ -20,6 +20,7 @@ import crypto.forestfish.forestfishd.policy.Policy;
 import crypto.forestfish.objects.evm.connector.EVMBlockChainUltraConnector;
 import crypto.forestfish.utils.CryptUtils;
 import crypto.forestfish.utils.FilesUtils;
+import crypto.forestfish.utils.NetUtils;
 import crypto.forestfish.utils.SystemUtils;
 import crypto.forestfish.enums.BlockchainType;
 import crypto.forestfish.enums.evm.EVMChain;
@@ -52,11 +53,11 @@ public class ForestFishService {
 	}
 
 	@SuppressWarnings("serial")
-	public ForestFishService(Settings s) {
+	private ForestFishService(Settings _settings) {
 		super();
-		settings = s;
+		settings = _settings;
 		
-		LOGGER.info("Launching ForestFishService");
+		LOGGER.info("Launching ForestFishService with default policy");
 
 		/**
 		 * Generate/get secret unless exists
@@ -79,7 +80,7 @@ public class ForestFishService {
 		/**
 		 * Blockchain support
 		 */
-		if (s.isNftmode() || s.isTokenmode()) {
+		if (_settings.isNftmode() || _settings.isTokenmode()) {
 			ultra_connector = new EVMBlockChainUltraConnector(BlockchainType.PUBLIC,
 					new HashMap<String, Boolean>() {{
 						this.put(EVMChain.POLYGON.toString(), true);
@@ -108,15 +109,16 @@ public class ForestFishService {
 			SystemUtils.halt();
 		}
 		
-		/**
-		 * Policy
-		 */
-		policy = new Policy();
-		
 	}
 
 	public static ForestFishService getInstance(Settings _settings, Policy _ffpolicy) {
-		if (null != _ffpolicy) policy = _ffpolicy;
+		if (null != _ffpolicy) {
+			LOGGER.warn("Launching with custom Policy");
+			policy = _ffpolicy;
+		} else {
+			LOGGER.warn("Launching with default Policy");
+			policy = new Policy();
+		}
 		if (single_instance == null) single_instance = new ForestFishService(_settings);
 		return single_instance;
 	}
@@ -177,10 +179,19 @@ public class ForestFishService {
 		}
 	}
 
-	public static String lookupCountryCodeForIP(final String ip) {
+	public static String lookupCountryCodeForIP(final String _ip) {
 		try {
-			InetAddress ipAddress = InetAddress.getByName(ip);
-			return lookupCountryCodeForIP(ipAddress);
+			if (NetUtils.isValidIPV4(_ip)) {
+				if (NetUtils.isRFC1918(_ip)) {
+					return "RFC1918";
+				}
+				if (NetUtils.isLocalHost(_ip)) {
+					return "LOCALHOST";
+				}
+				InetAddress ipAddress = InetAddress.getByName(_ip);
+				return lookupCountryCodeForIP(ipAddress);
+			}
+			return "N/A";
 		} catch (Exception e) {
 			return "N/A";
 		}

@@ -15,13 +15,19 @@ public class Policy {
 	// geoip access policy
 	@SuppressWarnings("serial")
 	private HashMap<String, Boolean> allowedCC = new HashMap<>() {{
-		this.put("SE", true);
-		this.put("US", true);
-		this.put("JP", true);
+		this.put("ALL", true); // no restriction
+		
+		// Examples
+		//this.put("LOCALHOST", true);
+		//this.put("RFC1918", true);
+		//this.put("US", true);
+		
 	}};
 	
+	@SuppressWarnings("serial")
 	private HashMap<String, Role> accounts = new HashMap<>() {{
 		this.put("0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266", Role.ADMIN); // https://hardhat.org/hardhat-network/docs/overview Account #0
+		this.put("0x12890d2cce102216644c59dae5baed380d84830c", Role.CONSUMER); // https://hukenneth.medium.com/ethereum-using-web3-js-for-message-signing-7e2935b2958c [0x12890D2cce102216644c59daE5baed380d84830c]
 	}};
 
 	public Policy() {

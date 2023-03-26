@@ -71,7 +71,7 @@ public class ForestFishV1RestServiceTest {
 		assertEquals("Ensure we obtained the secret content", "{\"content\":\"this is secret\",\"contentid\":\"1\",\"contenttype\":\"text/html\",\"valid\":true,\"version\":\"v1\"}", jsonGrabProtectedContentRESP);
 	}
 
-	@Ignore
+	//@Ignore
 	@Test
 	public void testLocalhostServer_actAsClient() {
 
@@ -153,6 +153,7 @@ public class ForestFishV1RestServiceTest {
 		ForestFishV1Response_authenticate authResponse = JSONUtils.createPOJOFromJSON(jsonAuthenticateRESP, ForestFishV1Response_authenticate.class);
 		assertTrue("Ensure we are successfully authenticated", authResponse.isSuccess());
 		
+		// Access the protected content
 		System.out.println("");
 		System.out.println("The secret content:");
 		String jsonGrabProtectedContentRESP = HttpRequestUtils.getBodyUsingGETUrlRequestAndJWTToken("http://localhost:6969/api/forestfish/v1/protectedcontent/1", authResponse.getJwtToken());

@@ -13,7 +13,7 @@ public class UtilsTest {
 		Policy p = new Policy();
 		String json = JSONUtils.createJSONFromPOJO(p);
 		System.out.println(json);
-		assertEquals("Ensure default config", "{\"accounts\":{\"0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266\":\"ADMIN\"},\"allowedCC\":{\"SE\":true,\"JP\":true,\"US\":true},\"blockchains_enabled\":{\"POLYGON\":true,\"ETHEREUM\":true}}", json);
+		assertEquals("Ensure default config", "{\"accounts\":{\"0x12890d2cce102216644c59dae5baed380d84830c\":\"CONSUMER\",\"0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266\":\"ADMIN\"},\"allowedCC\":{\"ALL\":true},\"blockchains_enabled\":{\"POLYGON\":true,\"ETHEREUM\":true}}", json);
 	}
 
 }
