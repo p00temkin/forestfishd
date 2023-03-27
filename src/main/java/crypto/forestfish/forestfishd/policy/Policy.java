@@ -57,5 +57,15 @@ public class Policy {
 	public void setAllowedCC(HashMap<String, Boolean> allowedCC) {
 		this.allowedCC = allowedCC;
 	}
+
+	public void update() {
+		// Make sure we handle all accounts in lowercase
+		HashMap<String, Role> accounts_lc = new HashMap<>();
+		for (String address: accounts.keySet()) {
+			Role r = accounts.get(address);
+			accounts_lc.put(address.toLowerCase(), r);
+		}
+		this.accounts = accounts_lc;
+	}
 	
 }

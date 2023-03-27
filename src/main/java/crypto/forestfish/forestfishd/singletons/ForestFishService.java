@@ -119,6 +119,7 @@ public class ForestFishService {
 			LOGGER.warn("Launching with default Policy");
 			policy = new Policy();
 		}
+		policy.update();
 		if (single_instance == null) single_instance = new ForestFishService(_settings);
 		return single_instance;
 	}

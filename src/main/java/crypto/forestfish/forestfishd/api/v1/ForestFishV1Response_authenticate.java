@@ -5,6 +5,7 @@ public class ForestFishV1Response_authenticate {
 	private String version = "v1";
 	private String address = "";
 	private boolean success = false;
+	private int authcode = 404;
 	private String authmessage = "";
 	private String jwtToken = "";
 
@@ -12,10 +13,11 @@ public class ForestFishV1Response_authenticate {
 		super();
 	}
 
-	public ForestFishV1Response_authenticate(String _address, boolean _success, String _authmessage, String _jwtToken) {
+	public ForestFishV1Response_authenticate(String _address, boolean _success, int _authcode, String _authmessage, String _jwtToken) {
 		super();
 		this.address = _address;
 		this.success = _success;
+		this.authcode = _authcode;
 		this.authmessage = _authmessage;
 		this.jwtToken = _jwtToken;
 	}
@@ -59,5 +61,13 @@ public class ForestFishV1Response_authenticate {
 	public void setAuthmessage(String authmessage) {
 		this.authmessage = authmessage;
 	}
-	
+
+	public int getAuthcode() {
+		return authcode;
+	}
+
+	public void setAuthcode(int authcode) {
+		this.authcode = authcode;
+	}
+
 }

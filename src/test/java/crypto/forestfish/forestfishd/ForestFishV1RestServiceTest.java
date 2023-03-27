@@ -60,6 +60,7 @@ public class ForestFishV1RestServiceTest {
 		System.out.println("Got authenticate response: " + jsonAuthenticateRESP);
 		ForestFishV1Response_authenticate authResponse = JSONUtils.createPOJOFromJSON(jsonAuthenticateRESP, ForestFishV1Response_authenticate.class);
 		assertTrue("Ensure we are successfully authenticated", authResponse.isSuccess());
+		assertEquals("Ensure we are get authcode 200", 200, authResponse.getAuthcode());
 		
 		System.out.println("");
 		System.out.println("Our JWT token is: " + authResponse.getJwtToken());

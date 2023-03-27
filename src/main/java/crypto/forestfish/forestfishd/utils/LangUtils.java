@@ -11,6 +11,8 @@ public class LangUtils {
 
 	public static String getCCGreeting(String _cc, Policy _policy) {
 		if (null != _policy.getAllowedCC().get(_cc)) {
+			if ("LOCALHOST".equals(_cc)) return "localhost access _oo_";
+			if ("RFC1918".equals(_cc)) return "rfc1918 access _oo_";
 			if ("SE".equals(_cc)) return "du har blivit noterad:";
 			if ("JP".equals(_cc)) return "あなたは指摘されました:";
 			if ("US".equals(_cc)) return "you have been noted:";

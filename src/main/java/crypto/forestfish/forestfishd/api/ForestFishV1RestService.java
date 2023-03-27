@@ -97,6 +97,7 @@ public class ForestFishV1RestService {
 
 			if (NetUtils.isValidIPV4(remoteIP)) {
 				String cc = ForestFishService.lookupCountryCodeForIP(remoteIP);
+				LOGGER.info("cc " + cc + " for " + remoteIP);
 				msg = LangUtils.getCCGreeting(cc, ForestFishService.getPolicy());
 
 				String address = req.getAddress();
@@ -216,6 +217,7 @@ public class ForestFishV1RestService {
 
 		ForestFishV1Request_authenticate req = JSONUtils.createPOJOFromJSON(reqSTR, ForestFishV1Request_authenticate.class);
 		String authmessage = "";
+		int authcode = 404;
 		boolean success = false;
 		String jwtToken = "";
 		String address = "";
@@ -239,46 +241,66 @@ public class ForestFishV1RestService {
 					if (!storedChallenge.equals(req.getChallenge())) {
 						LOGGER.warn("Attempt to replay old challenge " + req.getChallenge() + ", current challenge is " + storedChallenge);
 						authmessage = "Attempt to replay old challenge " + req.getChallenge() + ", current challenge is " + storedChallenge;
+						authcode = 401;
 						success = false;
 					} else {
 						success = EVMUtils.verify(req.getSignature(), req.getChallenge(), address);
 						if (success) {
 
 							// Successful signature, verify policy
-							boolean policy_allows_access = false;
+							boolean cc_policy_allows_access = false;
+							boolean account_policy_allows_access = true;
 							Policy pol = ForestFishService.getPolicy();
 							if ((null != pol) && (null != pol.getAllowedCC())) {
 								LOGGER.info("allowed ccs: " + pol.getAllowedCC().keySet());
 
 								// Check if there is a cc restriction
 								if (null != pol.getAllowedCC().get("ALL")) {
-									policy_allows_access = true;
+									cc_policy_allows_access = true;
 								} else {
 									if (null != pol.getAllowedCC().get(cc)) {
-										policy_allows_access = true;
+										cc_policy_allows_access = true;
 									}
+								}
+								if (!cc_policy_allows_access) {
+									LOGGER.warn("Successful authentication for wallet " + address + " but denied by cc policy");
+									authmessage = "Successful authentication for wallet " + address + " but denied by cc policy";
+									authcode = 402;
+									success = false;
 								}
 								
 								// Check for address restriction
 								if (null == pol.getAccounts()) {
 									LOGGER.warn("No accounts are setup, will deny all requests");
-									policy_allows_access = false;
+									account_policy_allows_access = false;
 								} else {
-									Role role = pol.getAccounts().get(req.getAddress());
+									Role role = pol.getAccounts().get(req.getAddress().toLowerCase());
 									if (null != role) {
-										policy_allows_access = true;
+										account_policy_allows_access = true;
 										LOGGER.info("Found approved account " + req.getAddress() + " with role " + role);
 									} else {
 										LOGGER.info("Account " + req.getAddress() + " not approved");
-										policy_allows_access = false;
+										account_policy_allows_access = false;
 									}
-								}	
+								}
+								if (!account_policy_allows_access) {
+									LOGGER.warn("Successful authentication for wallet " + address + " but denied by account policy");
+									authmessage = "Successful authentication for wallet " + address + " but denied by account policy";
+									authcode = 403;
+									success = false;
+								}
 								
+							} else {
+								LOGGER.warn("Successful authentication for wallet " + address + " but invalid policy");
+								authmessage = "Successful authentication for wallet " + address + " but invalid policy";
+								authcode = 404;
+								success = false;
 							}
 
-							if (policy_allows_access) {
+							if (cc_policy_allows_access && account_policy_allows_access) {
 								LOGGER.info("Successful authentication for wallet " + address + ", access allowed by policy, creating new challenge");
 								authmessage = "Successful authentication for wallet " + address + ", access allowed by policy, creating new challenge";
+								authcode = 200;
 								ForestFishService.generateNewChallengeForWallet(address);
 
 								LOGGER.info("Creating JWT token for wallet " + address);
@@ -371,14 +393,11 @@ public class ForestFishV1RestService {
 
 								LOGGER.info("Created JWT token for wallet " + address + ", token: " + jwtToken);
 
-							} else {
-								LOGGER.warn("Successful authentication for wallet " + address + " but denied by policy");
-								authmessage = "Successful authentication for wallet " + address + " but denied by policy";
-								success = false;
 							}
 						} else {
 							LOGGER.warn("Unsuccessful authentication attempt for wallet " + address);
 							authmessage = "Unsuccessful authentication attempt for wallet " + address;
+							authcode = 405;
 							success = false;
 						}
 					}
@@ -419,7 +438,7 @@ public class ForestFishV1RestService {
 					.entity("Access Denied, please behave")
 					.build();
 		}
-		ForestFishV1Response_authenticate pb = new ForestFishV1Response_authenticate(address, success, authmessage, jwtToken);
+		ForestFishV1Response_authenticate pb = new ForestFishV1Response_authenticate(address, success, authcode, authmessage, jwtToken);
 		return Response
 				.status(200)
 				.header("Access-Control-Allow-Origin", "*")
