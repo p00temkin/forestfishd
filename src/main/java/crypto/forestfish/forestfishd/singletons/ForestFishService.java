@@ -44,7 +44,7 @@ public class ForestFishService {
 	// Support
 	private static DatabaseReader geo2CityService;
 	private int geoIPcacheSize = 8096;
-	
+
 	// Policy
 	private static Policy policy;
 
@@ -56,27 +56,36 @@ public class ForestFishService {
 	private ForestFishService(Settings _settings) {
 		super();
 		settings = _settings;
-		
+
 		LOGGER.info("Launching ForestFishService with default policy");
 
 		/**
 		 * Generate/get secret unless exists
 		 */
-		File f = new File("secret");
-		if (!f.exists()) {
-			secret = CryptUtils.generateRandomString();
-			FilesUtils.writeToFileUNIXNoException(secret, "secret");
-		} else {
-			String temp_secret = FilesUtils.readAllFromFile(f);
-			if ((null != temp_secret) && (temp_secret.length() == 54)) {
-				secret = temp_secret;
+		if (null == _settings.getJwtSecret()) {
+			File f = new File("secret");
+			if (!f.exists()) {
+				LOGGER.info("No secret specified (missing cli -s option, FFSECRET env variable, cached secret file), so generating one");
+				secret = CryptUtils.generateRandomString();
 			} else {
-				LOGGER.error("Found invalid secret file content of length " + temp_secret.length() + ": " + temp_secret);
-				SystemUtils.halt();
+				LOGGER.info("No secret specified (missing cli -s option, FFSECRET env variable), but found cached secret file");
+				String temp_secret = FilesUtils.readAllFromFile(f);
+				if ((null != temp_secret) && (temp_secret.length() == 54)) {
+					secret = temp_secret;
+				} else {
+					LOGGER.error("Found invalid secret file content of length " + temp_secret.length() + ": " + temp_secret);
+					SystemUtils.halt();
+				}
 			}
+		} else {
+			secret = _settings.getJwtSecret();
 		}
 		LOGGER.info("Moving forward with secret: " + secret);
-		
+
+		// Always flush JWT secret
+		FilesUtils.writeToFileUNIXNoException(secret, "secret");
+		LOGGER.info("Flushed JWT secret to local file");
+
 		/**
 		 * Blockchain support
 		 */
@@ -108,7 +117,7 @@ public class ForestFishService {
 			LOGGER.error("Unable to launch geoIP2 City service");
 			SystemUtils.halt();
 		}
-		
+
 	}
 
 	public static ForestFishService getInstance(Settings _settings, Policy _ffpolicy) {

@@ -6,9 +6,9 @@ import org.slf4j.LoggerFactory;
 import crypto.forestfish.forestfishd.policy.Policy;
 import crypto.forestfish.utils.JSONUtils;
 
-public class PolicyUtils {
+public class ConfigUtils {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(PolicyUtils.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(ConfigUtils.class);
 
 	public static Policy parsePolicyENV() {
 		Policy ffpolicy = null;
@@ -26,6 +26,18 @@ public class PolicyUtils {
 			}
 		}
 		return ffpolicy;
+	}
+
+	public static String parseJWTSecretENV() {
+		String secret = null;
+		String secret_env = System.getenv("FFSECRET");
+		if (null == secret_env) {
+			LOGGER.info("FFSECRET env variable not set");
+		} else {
+			LOGGER.info("FFSECRET env variable set to " + secret_env);
+			return secret_env;
+		}
+		return secret;
 	}
 
 }

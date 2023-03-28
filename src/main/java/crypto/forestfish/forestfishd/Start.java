@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 import crypto.forestfish.forestfishd.policy.Policy;
 import crypto.forestfish.forestfishd.singletons.ApiService;
 import crypto.forestfish.forestfishd.singletons.ForestFishService;
-import crypto.forestfish.forestfishd.utils.PolicyUtils;
+import crypto.forestfish.forestfishd.utils.ConfigUtils;
 import crypto.forestfish.utils.SystemUtils;
 
 public class Start {
@@ -24,10 +24,14 @@ public class Start {
 		LOGGER.info("init()");
 		
 		// FFPOLICY
-		Policy ffpolicy = PolicyUtils.parsePolicyENV();
+		Policy ffpolicy = ConfigUtils.parsePolicyENV();
+		
+		// JWT SECRET
+		String secret = ConfigUtils.parseJWTSecretENV();
 		
 		// Initialize settings
 		Settings settings = parseCliArgs(args);
+		if (null != secret) settings.setJwtSecret(secret);
 		settings.sanityCheck();
 
 		// Launch a ForestFishService singleton if needed
@@ -57,6 +61,11 @@ public class Start {
 		Option port = new Option("l", "listenport", true, "REST API port");
 		port.setRequired(false);
 		options.addOption(port);
+		
+		// JWT secret
+		Option jwtSecret = new Option("s", "jwtsecret", true, "JWT secret (can also be set with FFSECRET env variable)");
+		jwtSecret.setRequired(false);
+		options.addOption(jwtSecret);
 
 		HelpFormatter formatter = new HelpFormatter();
 		CommandLineParser parser = new DefaultParser();
@@ -66,6 +75,7 @@ public class Start {
 			if (cmd.hasOption("n")) settings.setNftmode(true);
 			if (cmd.hasOption("t")) settings.setTokenmode(true);
 			if (cmd.hasOption("l")) settings.setPort(Integer.parseInt(cmd.getOptionValue("listenport")));
+			if (cmd.hasOption("s")) settings.setJwtSecret(cmd.getOptionValue("jwtsecret"));
 			settings.print();
 
 		} catch (ParseException e) {

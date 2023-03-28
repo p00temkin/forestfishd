@@ -5,7 +5,7 @@ import crypto.forestfish.utils.SystemUtils;
 public class Settings {
 
 	private int port = 6969;
-	private String jwtSecret = "secret";
+	private String jwtSecret;
 	private boolean nftmode = false;
 	private boolean tokenmode = false;
 
@@ -40,7 +40,7 @@ public class Settings {
 	public void print() {
         System.out.println("Settings:");
         System.out.println(" - port: " + this.getPort());
-        System.out.println(" - jwtsecret length: " + this.getJwtSecret().length());
+        if (null != this.getJwtSecret()) System.out.println(" - jwtsecret length: " + this.getJwtSecret().length());
         System.out.println(" - nftmode: " + this.isNftmode());
         System.out.println(" - tokenmode: " + this.isTokenmode());
     }
