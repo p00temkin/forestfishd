@@ -35,8 +35,8 @@ import crypto.forestfish.forestfishd.api.v1.ForestFishV1Response_challenge;
 import crypto.forestfish.forestfishd.api.v1.ForestFishV1Response_knockknock;
 import crypto.forestfish.forestfishd.api.v1.ForestFishV1Response_protectedcontent;
 import crypto.forestfish.forestfishd.api.v1.ForestFishV1Response_status;
-import crypto.forestfish.forestfishd.policy.Policy;
-import crypto.forestfish.forestfishd.policy.Role;
+import crypto.forestfish.forestfishd.model.policy.Policy;
+import crypto.forestfish.forestfishd.model.policy.Role;
 import crypto.forestfish.forestfishd.singletons.ForestFishService;
 import crypto.forestfish.forestfishd.utils.LangUtils;
 import crypto.forestfish.objects.evm.EVMAccountBalance;
@@ -44,6 +44,7 @@ import crypto.forestfish.objects.evm.EVMNftAccountBalance;
 import crypto.forestfish.objects.evm.EVMPortfolio;
 import crypto.forestfish.objects.evm.connector.EVMBlockChainUltraConnector;
 import crypto.forestfish.objects.jwt.JWTSignedDecodeResult;
+import crypto.forestfish.objects.jwt.TokenType;
 import crypto.forestfish.utils.*;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -113,9 +114,21 @@ public class ForestFishV1RestService {
 				} else {
 					msg = msg + delimiterchar + remoteIP;
 				}
+				
+				boolean preregistered = false;
+				Policy pol = ForestFishService.getPolicy();
+				Role role = null;
+				if (null != pol) {
+					if (null != pol.getAccounts()) {
+						role = pol.getAccounts().get(req.getAddress().toLowerCase());
+						if (null != role) {
+							preregistered = true;
+						}
+					}
+				}
 
 				LOGGER.info("Replying to a knock from " + remoteIP + ": " + msg);
-				ForestFishV1Response_knockknock kk = new ForestFishV1Response_knockknock(req.getAddress(), remoteIP, cc, msg);
+				ForestFishV1Response_knockknock kk = new ForestFishV1Response_knockknock(req.getAddress(), remoteIP, cc, msg, preregistered);
 
 				return Response
 						.status(200)
@@ -207,13 +220,14 @@ public class ForestFishV1RestService {
 				.build();
 	}
 
-	// curl -s -X POST "localhost:6969/api/forestfish/v1/authenticate" -H 'Content-Type: application/json' -d '{"version":"v1","challenge":"a2278ea3-4459-4ecd-8f05-b53c12ac0597","address":"0x12890d2cce102216644c59dae5baed380d84830c","signature":"0x16672d6205b5557e834a4c9e81e07475d396a13c6c7ef10c959133da4efdac200x1c7918ae6e3a308838b6a923874ff0ba1524c95f6a8db9a257f5264c1858834b1c"}'
+	// curl -s -X POST "localhost:6969/api/forestfish/v1/authz" -H 'Content-Type: application/json' -d '{"version":"v1","challenge":"a2278ea3-4459-4ecd-8f05-b53c12ac0597","address":"0x12890d2cce102216644c59dae5baed380d84830c","signature":"0x16672d6205b5557e834a4c9e81e07475d396a13c6c7ef10c959133da4efdac200x1c7918ae6e3a308838b6a923874ff0ba1524c95f6a8db9a257f5264c1858834b1c"}'
 	@POST
-	@Path("/v1/authenticate")
+	@Path("/v1/authn")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response v1_authenticate(@HeaderParam("X-Real-IP") String xrealIP, @Context HttpServletRequest request, String reqSTR) {
-		LOGGER.info("v1_authenticate()");
+	public Response v1_authn(@HeaderParam("X-Real-IP") String xrealIP, @Context HttpServletRequest request, String reqSTR) {
+		LOGGER.info("v1_authn()");
+		TokenType tokentype = TokenType.AUTHN;
 
 		ForestFishV1Request_authenticate req = JSONUtils.createPOJOFromJSON(reqSTR, ForestFishV1Request_authenticate.class);
 		String authmessage = "";
@@ -222,7 +236,6 @@ public class ForestFishV1RestService {
 		String jwtToken = "";
 		String address = "";
 		if (null != req) {
-			String msg = "";
 			String remoteIP = request.getRemoteAddr();
 			if ("[0:0:0:0:0:0:0:1]".equals(remoteIP)) remoteIP = "127.0.0.1";
 
@@ -234,7 +247,201 @@ public class ForestFishV1RestService {
 
 			if (NetUtils.isValidIPV4(remoteIP)) {
 				String cc = ForestFishService.lookupCountryCodeForIP(remoteIP);
-				LOGGER.info("v1_authenticate() called with address=" + req.getAddress() + ", challenge=" + req.getChallenge() + ", signature=" + req.getSignature() + ", cc=" + cc);
+				LOGGER.info("v1_authn() called with address=" + req.getAddress() + ", challenge=" + req.getChallenge() + ", signature=" + req.getSignature() + ", cc=" + cc);
+				if (EVMUtils.isValidEthereumAddress(req.getAddress().toLowerCase())) {
+					address = req.getAddress().toLowerCase();
+					String storedChallenge = ForestFishService.getChallengeForWallet(address);
+					if (!storedChallenge.equals(req.getChallenge())) {
+						LOGGER.warn("Attempt to replay old challenge " + req.getChallenge() + ", current challenge is " + storedChallenge);
+						authmessage = "Attempt to replay old challenge " + req.getChallenge() + ", current challenge is " + storedChallenge;
+						authcode = 401;
+						success = false;
+					} else {
+						success = EVMUtils.verify(req.getSignature(), req.getChallenge(), address);
+						if (success) {
+
+							// Successful signature, dont verify policy
+							LOGGER.info("Successful authentication for wallet " + address + ", AUTHN so no policy check, creating new challenge");
+							authmessage = "Successful authentication for wallet " + address + ", AUTHN so no policy check, creating new challenge";
+							authcode = 200;
+							ForestFishService.generateNewChallengeForWallet(address);
+
+							LOGGER.info("Creating JWT token for wallet " + address);
+							String jwt_secret = ForestFishService.getSecret();
+							Key hmacKey = new SecretKeySpec(Base64.getDecoder().decode(jwt_secret), 
+									SignatureAlgorithm.HS256.getJcaName());
+							Instant now = Instant.now();
+
+							Map<String, Object> private_claims = new HashMap<>();
+							private_claims.put("evm_wallet_address", address);
+							private_claims.put("token_type", tokentype.toString());
+
+							if (ForestFishService.getSettings().isNftmode() || ForestFishService.getSettings().isTokenmode()) {
+								EVMBlockChainUltraConnector ultra_connector = ForestFishService.getUltra_connector();
+								if (null == ultra_connector) {
+									LOGGER.error("ultra_connector is null ..");
+								} else {
+									EVMPortfolio portfolio = EVMUtils.getEVMPortfolioForAccount(ultra_connector, address, true);
+
+									// NFT check
+									if (null != portfolio) {
+										if (null != portfolio.getChainportfolio()) {
+											if (ForestFishService.getSettings().isNftmode()) {
+												if (null != portfolio.getChainportfolio().get(EVMChain.POLYGON)) {
+													if (!portfolio.getChainportfolio().get(EVMChain.POLYGON).getErc721tokens().isEmpty()) {
+														for (String nftName: portfolio.getChainportfolio().get(EVMChain.POLYGON).getErc721tokens().keySet()) {
+															EVMNftAccountBalance bal = portfolio.getChainportfolio().get(EVMChain.POLYGON).getErc721tokens().get(nftName);
+															System.out.println("POLYGON NFT ownership: " + nftName + " bal: " + bal.getBalance());
+															private_claims.put("nft_ownership:" + EVMChain.POLYGON.toString() + ":" + nftName, bal.getBalance());
+														}
+													}
+												}
+
+												if (null != portfolio.getChainportfolio().get(EVMChain.ETHEREUM)) {
+													if (!portfolio.getChainportfolio().get(EVMChain.ETHEREUM).getErc721tokens().isEmpty()) {
+														for (String nftName: portfolio.getChainportfolio().get(EVMChain.ETHEREUM).getErc721tokens().keySet()) {
+															EVMNftAccountBalance bal = portfolio.getChainportfolio().get(EVMChain.ETHEREUM).getErc721tokens().get(nftName);
+															System.out.println("ETHEREUM NFT ownership: " + nftName + " bal: " + bal.getBalance());
+															private_claims.put("nft_ownership:" + EVMChain.ETHEREUM.toString() + ":" + nftName, bal.getBalance());
+														}
+													}
+												}
+											}
+
+											// ERC-20 check
+											if (ForestFishService.getSettings().isTokenmode()) {
+												if (null != portfolio.getChainportfolio().get(EVMChain.POLYGON)) {
+													if (!portfolio.getChainportfolio().get(EVMChain.POLYGON).getErc20tokens().isEmpty()) {
+														for (String tokenName: portfolio.getChainportfolio().get(EVMChain.POLYGON).getErc20tokens().keySet()) {
+															EVMAccountBalance bal = portfolio.getChainportfolio().get(EVMChain.POLYGON).getErc20tokens().get(tokenName);
+															System.out.println("POLYGON ERC20 ownership: " + tokenName + " bal: " + bal.getBalanceInWEI());
+															private_claims.put("erc20_ownership:" + EVMChain.POLYGON.toString() + ":" + tokenName, bal.getBalanceInWEI());
+														}
+													}
+												}
+
+												if (null != portfolio.getChainportfolio().get(EVMChain.ETHEREUM)) {
+													if (!portfolio.getChainportfolio().get(EVMChain.ETHEREUM).getErc20tokens().isEmpty()) {
+														for (String tokenName: portfolio.getChainportfolio().get(EVMChain.ETHEREUM).getErc20tokens().keySet()) {
+															EVMAccountBalance bal = portfolio.getChainportfolio().get(EVMChain.ETHEREUM).getErc20tokens().get(tokenName);
+															System.out.println("ETHEREUM ERC20 ownership: " + tokenName + " bal: " + bal.getBalanceInWEI());
+															private_claims.put("erc20_ownership:" + EVMChain.ETHEREUM.toString() + ":" + tokenName, bal.getBalanceInWEI());
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+
+							jwtToken = Jwts.builder()
+
+									// private claims
+									//.claim("evm_wallet_address", address) // private claim
+									.addClaims(private_claims)
+
+									// registered claims
+									.setIssuer("forestfishd") // move to conf
+									.setAudience("web3did") // move to conf
+									.setSubject(address) // sub, user identifier
+									.setIssuedAt(Date.from(now)) // iat
+									.setExpiration(Date.from(now.plus(1, ChronoUnit.DAYS))) // exp, 1 days
+									.setId(UUID.randomUUID().toString()) // jti, unique JWT token identifier
+
+									// signature
+									.signWith(hmacKey)
+									.setHeaderParam("typ","JWT")
+
+									// finalize
+									.compact();
+
+							LOGGER.info("Created JWT token for wallet " + address + ", token: " + jwtToken);
+
+						} else {
+							LOGGER.warn("Unsuccessful authentication attempt for wallet " + address);
+							authmessage = "Unsuccessful authentication attempt for wallet " + address;
+							authcode = 405;
+							success = false;
+						}
+					}
+				} else {
+					LOGGER.info("v1_authn() called with invalid address=" + req.getAddress());
+					return Response
+							.status(403)
+							.header("Access-Control-Allow-Origin", "*")
+							.header("Access-Control-Allow-Headers", "origin, content-type, accept, authorization")
+							.header("Access-Control-Allow-Credentials", "true")
+							.header("Access-Control-Allow-Methods", "GET, POST")
+							.header("Access-Control-Max-Age", "1209600")
+							.entity("Access Denied, invalid address specified")
+							.build();
+				}
+
+			} else {
+				return Response
+						.status(403)
+						.header("Access-Control-Allow-Origin", "*")
+						.header("Access-Control-Allow-Headers", "origin, content-type, accept, authorization")
+						.header("Access-Control-Allow-Credentials", "true")
+						.header("Access-Control-Allow-Methods", "GET, POST")
+						.header("Access-Control-Max-Age", "1209600")
+						.entity("Access Denied, invalid IP")
+						.build();
+			}
+
+		} else {
+			LOGGER.warn("Invalid POST request noted: " + reqSTR);
+			return Response
+					.status(403)
+					.header("Access-Control-Allow-Origin", "*")
+					.header("Access-Control-Allow-Headers", "origin, content-type, accept, authorization")
+					.header("Access-Control-Allow-Credentials", "true")
+					.header("Access-Control-Allow-Methods", "GET, POST")
+					.header("Access-Control-Max-Age", "1209600")
+					.entity("Access Denied, please behave")
+					.build();
+		}
+		ForestFishV1Response_authenticate pb = new ForestFishV1Response_authenticate(address, success, authcode, authmessage, jwtToken);
+		return Response
+				.status(200)
+				.header("Access-Control-Allow-Origin", "*")
+				.header("Access-Control-Allow-Headers", "origin, content-type, accept, authorization")
+				.header("Access-Control-Allow-Credentials", "true")
+				.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+				.header("Access-Control-Max-Age", "1209600")
+				.entity(JSONUtils.createJSONFromPOJO(pb))
+				.build();
+	}
+
+	// curl -s -X POST "localhost:6969/api/forestfish/v1/authz" -H 'Content-Type: application/json' -d '{"version":"v1","challenge":"a2278ea3-4459-4ecd-8f05-b53c12ac0597","address":"0x12890d2cce102216644c59dae5baed380d84830c","signature":"0x16672d6205b5557e834a4c9e81e07475d396a13c6c7ef10c959133da4efdac200x1c7918ae6e3a308838b6a923874ff0ba1524c95f6a8db9a257f5264c1858834b1c"}'
+	@POST
+	@Path("/v1/authz")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response v1_authz(@HeaderParam("X-Real-IP") String xrealIP, @Context HttpServletRequest request, String reqSTR) {
+		LOGGER.info("v1_authz()");
+		TokenType tokentype = TokenType.AUTHZ;
+
+		ForestFishV1Request_authenticate req = JSONUtils.createPOJOFromJSON(reqSTR, ForestFishV1Request_authenticate.class);
+		String authmessage = "";
+		int authcode = 404;
+		boolean success = false;
+		String jwtToken = "";
+		String address = "";
+		if (null != req) {
+			String remoteIP = request.getRemoteAddr();
+			if ("[0:0:0:0:0:0:0:1]".equals(remoteIP)) remoteIP = "127.0.0.1";
+
+			if (null != xrealIP) {
+				if (NetUtils.isValidIPV4(xrealIP)) {
+					remoteIP = xrealIP;
+				}
+			}
+
+			if (NetUtils.isValidIPV4(remoteIP)) {
+				String cc = ForestFishService.lookupCountryCodeForIP(remoteIP);
+				LOGGER.info("v1_authz() called with address=" + req.getAddress() + ", challenge=" + req.getChallenge() + ", signature=" + req.getSignature() + ", cc=" + cc);
 				if (EVMUtils.isValidEthereumAddress(req.getAddress().toLowerCase())) {
 					address = req.getAddress().toLowerCase();
 					String storedChallenge = ForestFishService.getChallengeForWallet(address);
@@ -251,6 +458,7 @@ public class ForestFishV1RestService {
 							boolean cc_policy_allows_access = false;
 							boolean account_policy_allows_access = true;
 							Policy pol = ForestFishService.getPolicy();
+							Role role = null;
 							if ((null != pol) && (null != pol.getAllowedCC())) {
 								LOGGER.info("allowed ccs: " + pol.getAllowedCC().keySet());
 
@@ -268,13 +476,13 @@ public class ForestFishV1RestService {
 									authcode = 402;
 									success = false;
 								}
-								
+
 								// Check for address restriction
 								if (null == pol.getAccounts()) {
 									LOGGER.warn("No accounts are setup, will deny all requests");
 									account_policy_allows_access = false;
 								} else {
-									Role role = pol.getAccounts().get(req.getAddress().toLowerCase());
+									role = pol.getAccounts().get(req.getAddress().toLowerCase());
 									if (null != role) {
 										account_policy_allows_access = true;
 										LOGGER.info("Found approved account " + req.getAddress() + " with role " + role);
@@ -289,7 +497,7 @@ public class ForestFishV1RestService {
 									authcode = 403;
 									success = false;
 								}
-								
+
 							} else {
 								LOGGER.warn("Successful authentication for wallet " + address + " but invalid policy");
 								authmessage = "Successful authentication for wallet " + address + " but invalid policy";
@@ -311,6 +519,8 @@ public class ForestFishV1RestService {
 
 								Map<String, Object> private_claims = new HashMap<>();
 								private_claims.put("evm_wallet_address", address);
+								private_claims.put("token_type", tokentype.toString());
+								private_claims.put("role", role.toString());
 
 								if (ForestFishService.getSettings().isNftmode() || ForestFishService.getSettings().isTokenmode()) {
 									EVMBlockChainUltraConnector ultra_connector = ForestFishService.getUltra_connector();
@@ -387,6 +597,7 @@ public class ForestFishV1RestService {
 
 										// signature
 										.signWith(hmacKey)
+										.setHeaderParam("typ","JWT")
 
 										// finalize
 										.compact();
@@ -402,7 +613,7 @@ public class ForestFishV1RestService {
 						}
 					}
 				} else {
-					LOGGER.info("v1_authenticate() called with invalid address=" + req.getAddress());
+					LOGGER.info("v1_authz() called with invalid address=" + req.getAddress());
 					return Response
 							.status(403)
 							.header("Access-Control-Allow-Origin", "*")
@@ -452,9 +663,23 @@ public class ForestFishV1RestService {
 
 	// CORS, https://localcoder.org/how-to-enable-cross-domain-requests-on-jax-rs-web-services
 	@OPTIONS
-	@Path("/v1/authenticate")
-	public Response authenticate_options() {
-		LOGGER.info("OPTIONS req for /v1/authenticate");
+	@Path("/v1/authn")
+	public Response authn_options() {
+		LOGGER.info("OPTIONS req for /v1/authn");
+		return Response.ok("")
+				.header("Access-Control-Allow-Origin", "*")
+				.header("Access-Control-Allow-Headers", "origin, content-type, accept, authorization")
+				.header("Access-Control-Allow-Credentials", "true")
+				.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, HEAD")
+				.header("Access-Control-Max-Age", "1209600")
+				.build();
+	}
+
+	// CORS, https://localcoder.org/how-to-enable-cross-domain-requests-on-jax-rs-web-services
+	@OPTIONS
+	@Path("/v1/authz")
+	public Response authz_options() {
+		LOGGER.info("OPTIONS req for /v1/authz");
 		return Response.ok("")
 				.header("Access-Control-Allow-Origin", "*")
 				.header("Access-Control-Allow-Headers", "origin, content-type, accept, authorization")
@@ -495,6 +720,7 @@ public class ForestFishV1RestService {
 						jwt_decoderesult.isSignature_valid() && 
 						!jwt_decoderesult.isInvalid_jwt() && 
 						!jwt_decoderesult.isExpired() && 
+						(jwt_decoderesult.getToken_type() == TokenType.AUTHZ) && // Make sure token is AUTHZ
 						true) {
 					valid = true;
 				}

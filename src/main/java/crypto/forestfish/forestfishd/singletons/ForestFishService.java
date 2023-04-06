@@ -16,7 +16,7 @@ import com.maxmind.geoip2.model.CityResponse;
 import com.maxmind.geoip2.record.Country;
 
 import crypto.forestfish.forestfishd.Settings;
-import crypto.forestfish.forestfishd.policy.Policy;
+import crypto.forestfish.forestfishd.model.policy.Policy;
 import crypto.forestfish.objects.evm.connector.EVMBlockChainUltraConnector;
 import crypto.forestfish.utils.CryptUtils;
 import crypto.forestfish.utils.FilesUtils;

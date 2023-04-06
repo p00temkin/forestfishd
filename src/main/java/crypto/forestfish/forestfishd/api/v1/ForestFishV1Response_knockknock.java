@@ -7,17 +7,19 @@ public class ForestFishV1Response_knockknock {
 	private String ip = "";
 	private String cc = "";
 	private String msg = "";
+	private Boolean preregistered = false;
 
 	public ForestFishV1Response_knockknock() {
 		super();
 	}
 
-	public ForestFishV1Response_knockknock(String _wallet, String _ip, String _cc, String _msg) {
+	public ForestFishV1Response_knockknock(String _wallet, String _ip, String _cc, String _msg, Boolean _preregistered) {
 		super();
 		this.wallet = _wallet;
 		this.ip = _ip;
 		this.cc = _cc;
 		this.msg = _msg;
+		this.preregistered = _preregistered;
 	}
 
 	public String getVersion() {
@@ -58,6 +60,14 @@ public class ForestFishV1Response_knockknock {
 
 	public void setCc(String cc) {
 		this.cc = cc;
+	}
+
+	public Boolean getPreregistered() {
+		return preregistered;
+	}
+
+	public void setPreregistered(Boolean preregistered) {
+		this.preregistered = preregistered;
 	}
 	
 }

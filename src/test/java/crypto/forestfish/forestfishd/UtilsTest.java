@@ -3,7 +3,8 @@ package crypto.forestfish.forestfishd;
 import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
-import crypto.forestfish.forestfishd.policy.Policy;
+
+import crypto.forestfish.forestfishd.model.policy.Policy;
 import crypto.forestfish.utils.JSONUtils;
 
 public class UtilsTest {

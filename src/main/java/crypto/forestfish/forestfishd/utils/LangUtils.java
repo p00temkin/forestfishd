@@ -3,7 +3,7 @@ package crypto.forestfish.forestfishd.utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import crypto.forestfish.forestfishd.policy.Policy;
+import crypto.forestfish.forestfishd.model.policy.Policy;
 
 public class LangUtils {
 
@@ -16,6 +16,8 @@ public class LangUtils {
 			if ("SE".equals(_cc)) return "hejsan.";
 			if ("JP".equals(_cc)) return "やあ.";
 			if ("US".equals(_cc)) return "hello.";
+		} else if (null != _policy.getAllowedCC().get("ALL")) {
+			return "all ok.";
 		} else {
 			return "you be sus.";
 		}

@@ -3,7 +3,7 @@ package crypto.forestfish.forestfishd.utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import crypto.forestfish.forestfishd.policy.Policy;
+import crypto.forestfish.forestfishd.model.policy.Policy;
 import crypto.forestfish.utils.JSONUtils;
 
 public class ConfigUtils {

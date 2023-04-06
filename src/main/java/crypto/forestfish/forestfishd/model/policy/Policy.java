@@ -1,4 +1,4 @@
-package crypto.forestfish.forestfishd.policy;
+package crypto.forestfish.forestfishd.model.policy;
 
 import java.util.HashMap;
 
@@ -24,11 +24,7 @@ public class Policy {
 		
 	}};
 	
-	@SuppressWarnings("serial")
-	private HashMap<String, Role> accounts = new HashMap<>() {{
-		this.put("0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266", Role.ADMIN); // https://hardhat.org/hardhat-network/docs/overview Account #0
-		this.put("0x12890d2cce102216644c59dae5baed380d84830c", Role.CONSUMER); // https://hukenneth.medium.com/ethereum-using-web3-js-for-message-signing-7e2935b2958c [0x12890D2cce102216644c59daE5baed380d84830c]
-	}};
+	private HashMap<String, Role> accounts = new HashMap<>();
 
 	public Policy() {
 		super();

@@ -10,7 +10,7 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import crypto.forestfish.forestfishd.policy.Policy;
+import crypto.forestfish.forestfishd.model.policy.Policy;
 import crypto.forestfish.forestfishd.singletons.ApiService;
 import crypto.forestfish.forestfishd.singletons.ForestFishService;
 import crypto.forestfish.forestfishd.utils.ConfigUtils;
