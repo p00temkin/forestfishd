@@ -115,7 +115,7 @@ public class ForestFishV1RestService {
 				}
 
 				LOGGER.info("Replying to a knock from " + remoteIP + ": " + msg);
-				ForestFishV1Response_knockknock kk = new ForestFishV1Response_knockknock(req.getAddress(), remoteIP, msg);
+				ForestFishV1Response_knockknock kk = new ForestFishV1Response_knockknock(req.getAddress(), remoteIP, cc, msg);
 
 				return Response
 						.status(200)

@@ -5,16 +5,18 @@ public class ForestFishV1Response_knockknock {
 	private String version = "v1";
 	private String wallet = "";
 	private String ip = "";
+	private String cc = "";
 	private String msg = "";
 
 	public ForestFishV1Response_knockknock() {
 		super();
 	}
 
-	public ForestFishV1Response_knockknock(String _wallet, String _ip, String _msg) {
+	public ForestFishV1Response_knockknock(String _wallet, String _ip, String _cc, String _msg) {
 		super();
 		this.wallet = _wallet;
 		this.ip = _ip;
+		this.cc = _cc;
 		this.msg = _msg;
 	}
 
@@ -48,6 +50,14 @@ public class ForestFishV1Response_knockknock {
 
 	public void setIp(String ip) {
 		this.ip = ip;
+	}
+
+	public String getCc() {
+		return cc;
+	}
+
+	public void setCc(String cc) {
+		this.cc = cc;
 	}
 	
 }
