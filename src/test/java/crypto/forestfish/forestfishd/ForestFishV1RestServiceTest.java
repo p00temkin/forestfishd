@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.HashMap;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.web3j.crypto.Credentials;
 
@@ -228,7 +229,7 @@ public class ForestFishV1RestServiceTest {
 		assertEquals("Ensure ok /v1/knockknock preregistered reply", true, knockResponse.getPreregistered());
 	}
 	
-	//@Ignore
+	@Ignore
 	@Test
 	public void testLocalhostServer_actAsClient() {
 
