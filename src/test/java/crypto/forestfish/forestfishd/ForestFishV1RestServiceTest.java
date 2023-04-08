@@ -116,6 +116,7 @@ public class ForestFishV1RestServiceTest {
 		
 		// /v1/knockknock
 		String knockjson = HttpRequestUtils.getBodyUsingUrlPOSTRequestWithJsonBody("http://localhost:6969/api/forestfish/v1/knockknock", "{\"address\":\"" + walletAddress + "\",\"version\":\"v1\"}");
+		System.out.println("knockknockjson: " + knockjson);
 		ForestFishV1Response_knockknock knockResponse = JSONUtils.createPOJOFromJSON(knockjson, ForestFishV1Response_knockknock.class);
 		assertEquals("Ensure ok /v1/knockknock wallet reply", walletAddress, knockResponse.getWallet());
 		assertEquals("Ensure ok /v1/knockknock negative preregistered reply", false, knockResponse.getPreregistered());
