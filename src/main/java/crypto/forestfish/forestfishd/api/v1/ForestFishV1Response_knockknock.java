@@ -8,18 +8,20 @@ public class ForestFishV1Response_knockknock {
 	private String cc = "";
 	private String msg = "";
 	private Boolean preregistered = false;
+	private String role = "";
 
 	public ForestFishV1Response_knockknock() {
 		super();
 	}
 
-	public ForestFishV1Response_knockknock(String _wallet, String _ip, String _cc, String _msg, Boolean _preregistered) {
+	public ForestFishV1Response_knockknock(String _wallet, String _ip, String _cc, String _msg, Boolean _preregistered, String _role) {
 		super();
 		this.wallet = _wallet;
 		this.ip = _ip;
 		this.cc = _cc;
 		this.msg = _msg;
 		this.preregistered = _preregistered;
+		this.role = _role;
 	}
 
 	public String getVersion() {
@@ -68,6 +70,14 @@ public class ForestFishV1Response_knockknock {
 
 	public void setPreregistered(Boolean preregistered) {
 		this.preregistered = preregistered;
+	}
+
+	public String getRole() {
+		return role;
+	}
+
+	public void setRole(String role) {
+		this.role = role;
 	}
 	
 }
