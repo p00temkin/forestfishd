@@ -282,7 +282,7 @@ public class ForestFishV1RestService {
 								if (null == ultra_connector) {
 									LOGGER.error("ultra_connector is null ..");
 								} else {
-									EVMPortfolio portfolio = EVMUtils.getEVMPortfolioForAccount(ultra_connector, address, true);
+									EVMPortfolio portfolio = EVMUtils.getEVMPortfolioForAccount(ultra_connector, address);
 
 									// NFT check
 									if (null != portfolio) {
@@ -528,7 +528,7 @@ public class ForestFishV1RestService {
 									if (null == ultra_connector) {
 										LOGGER.error("ultra_connector is null ..");
 									} else {
-										EVMPortfolio portfolio = EVMUtils.getEVMPortfolioForAccount(ultra_connector, address, true);
+										EVMPortfolio portfolio = EVMUtils.getEVMPortfolioForAccount(ultra_connector, address);
 
 										// NFT check
 										if (null != portfolio) {
