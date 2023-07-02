@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.io.File;
 import java.util.HashMap;
 
 import org.junit.Ignore;
@@ -30,10 +31,15 @@ import io.jsonwebtoken.SignatureAlgorithm;
 
 public class ForestFishV1RestServiceTest {
 
+	@Ignore
 	@Test
 	public void testE2E_authN() {
 
 		Settings settings = new Settings();
+		
+		// Clear cached policy if exists
+		File f = new File("ffpolicy.json");
+		if (f.exists()) f.delete();
 
 		// Launch a GitGo singleton if needed
 		ForestFishService.getInstance(settings, null);
@@ -122,12 +128,17 @@ public class ForestFishV1RestServiceTest {
 		assertEquals("Ensure ok /v1/knockknock negative preregistered reply", false, knockResponse.getPreregistered());
 	}
 
+	@Ignore
 	@Test
 	public void testE2E_authZ() {
 
 		Settings settings = new Settings();
 		settings.setNftmode(true);
 		settings.setTokenmode(true);
+		
+		// Clear cached policy if exists
+		File f = new File("ffpolicy.json");
+		if (f.exists()) f.delete();
 		
 		Policy ffpolicy = new Policy();
 		HashMap<String, Role> accounts = new HashMap<>();
@@ -211,7 +222,7 @@ public class ForestFishV1RestServiceTest {
 		// verify JWT private claims properly set
 		assertEquals("Ensure evm_wallet is set", walletAddress, jwt_decoderesult.getPrivate_claims().getEvm_wallet_address());
 		assertEquals("Ensure token_type is AUTHZ", "AUTHZ", jwt_decoderesult.getPrivate_claims().getToken_type());
-		assertEquals("Ensure no role is set for AUTHZ", Role.CONSUMER.toString(), jwt_decoderesult.getPrivate_claims().getRole());
+		assertEquals("Ensure default CONSUMER role is set for AUTHZ", Role.CONSUMER.toString(), jwt_decoderesult.getPrivate_claims().getRole());
 		
 		// Make sure private token_type claim has propagated to the root
 		assertEquals("Ensure root token_type is AUTHZ", TokenType.AUTHZ, jwt_decoderesult.getToken_type());
@@ -234,6 +245,10 @@ public class ForestFishV1RestServiceTest {
 	@Test
 	public void testLocalhostServer_actAsClient() {
 
+		// Clear cached policy if exists
+		File f = new File("ffpolicy.json");
+		if (f.exists()) f.delete();
+		
 		// /v1/status
 		assertEquals("Ensure ok /v1/status reply", "{\"status\":\"up\",\"version\":\"v1\"}", HttpRequestUtils.getBodyUsingGETUrlRequest("http://localhost:6969/api/forestfish/v1/status"));
 

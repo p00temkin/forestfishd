@@ -20,6 +20,7 @@ import crypto.forestfish.forestfishd.model.policy.Policy;
 import crypto.forestfish.objects.evm.connector.EVMBlockChainUltraConnector;
 import crypto.forestfish.utils.CryptUtils;
 import crypto.forestfish.utils.FilesUtils;
+import crypto.forestfish.utils.JSONUtils;
 import crypto.forestfish.utils.NetUtils;
 import crypto.forestfish.utils.SystemUtils;
 import crypto.forestfish.enums.BlockchainType;
@@ -47,6 +48,8 @@ public class ForestFishService {
 
 	// Policy
 	private static Policy policy;
+	private static boolean allow_policy_reconfig_over_rest = false;
+	private static boolean allow_policy_reconfig_over_rest_from_rfc1918 = false;
 
 	public ForestFishService() {
 		super();
@@ -118,17 +121,38 @@ public class ForestFishService {
 			SystemUtils.halt();
 		}
 
+		// Transfer REST policy reconfig setting 
+		allow_policy_reconfig_over_rest = settings.isAllow_policy_reconfig_over_rest();
+		allow_policy_reconfig_over_rest_from_rfc1918 = settings.isAllow_policy_reconfig_over_rest_from_rfc1918();
+
 	}
 
 	public static ForestFishService getInstance(Settings _settings, Policy _ffpolicy) {
-		if (null != _ffpolicy) {
-			LOGGER.warn("Launching with custom Policy");
-			policy = _ffpolicy;
-		} else {
-			LOGGER.warn("Launching with default Policy");
-			policy = new Policy();
+
+		// First check for stored policy copy
+		File f = new File("ffpolicy.json");
+		if (f.exists()) {
+			String json = FilesUtils.readAllFromFile(f);
+			Policy ffpolicy_temp = JSONUtils.createPOJOFromJSON(json, Policy.class);
+			if (null != ffpolicy_temp) policy = ffpolicy_temp;
 		}
+
+		// Check for ENV supplied policy
+		if (null == policy) {
+			if (null != _ffpolicy) {
+				LOGGER.info("Launching with custom Policy");
+				policy = _ffpolicy;
+				
+				String json = JSONUtils.createJSONFromPOJO(policy);
+				FilesUtils.writeToFileUNIXNoException(json, "ffpolicy.json");
+			} else {
+				LOGGER.info("Launching with default Policy");
+				policy = new Policy();
+			}
+		}
+		
 		policy.update();
+		
 		if (single_instance == null) single_instance = new ForestFishService(_settings);
 		return single_instance;
 	}
@@ -213,6 +237,23 @@ public class ForestFishService {
 
 	public static void setPolicy(Policy policy) {
 		ForestFishService.policy = policy;
+	}
+
+	public static boolean isAllow_policy_reconfig_over_rest() {
+		return allow_policy_reconfig_over_rest;
+	}
+
+	public static void setAllow_policy_reconfig_over_rest(boolean allow_policy_reconfig_over_rest) {
+		ForestFishService.allow_policy_reconfig_over_rest = allow_policy_reconfig_over_rest;
+	}
+
+	public static boolean isAllow_policy_reconfig_over_rest_from_rfc1918() {
+		return allow_policy_reconfig_over_rest_from_rfc1918;
+	}
+
+	public static void setAllow_policy_reconfig_over_rest_from_rfc1918(
+			boolean allow_policy_reconfig_over_rest_from_rfc1918) {
+		ForestFishService.allow_policy_reconfig_over_rest_from_rfc1918 = allow_policy_reconfig_over_rest_from_rfc1918;
 	}
 
 }

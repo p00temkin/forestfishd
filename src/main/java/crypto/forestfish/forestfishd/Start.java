@@ -66,6 +66,16 @@ public class Start {
 		Option jwtSecret = new Option("s", "jwtsecret", true, "JWT secret (can also be set with FFSECRET env variable)");
 		jwtSecret.setRequired(false);
 		options.addOption(jwtSecret);
+		
+		// Policy update over REST setting
+		Option policyupdateOption = new Option("a", "allowpolicyupdate", false, "Use to allow policy to be updated over REST)");
+		policyupdateOption.setRequired(false);
+		options.addOption(policyupdateOption);
+		
+		// Policy update over REST setting
+		Option rfc1918policyupdateOption = new Option("r", "rfc1918allowpolicyupdate", false, "Use to restrict policy updates from RFC1918 addresses)");
+		rfc1918policyupdateOption.setRequired(false);
+		options.addOption(rfc1918policyupdateOption);
 
 		HelpFormatter formatter = new HelpFormatter();
 		CommandLineParser parser = new DefaultParser();
@@ -76,6 +86,8 @@ public class Start {
 			if (cmd.hasOption("t")) settings.setTokenmode(true);
 			if (cmd.hasOption("l")) settings.setPort(Integer.parseInt(cmd.getOptionValue("listenport")));
 			if (cmd.hasOption("s")) settings.setJwtSecret(cmd.getOptionValue("jwtsecret"));
+			if (cmd.hasOption("a")) settings.setAllow_policy_reconfig_over_rest(true);
+			if (cmd.hasOption("r")) settings.setAllow_policy_reconfig_over_rest_from_rfc1918(true);
 			settings.print();
 
 		} catch (ParseException e) {

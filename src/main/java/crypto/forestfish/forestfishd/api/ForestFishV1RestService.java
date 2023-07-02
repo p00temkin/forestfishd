@@ -3,6 +3,7 @@ package crypto.forestfish.forestfishd.api;
 import java.security.Key;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
@@ -114,7 +115,7 @@ public class ForestFishV1RestService {
 				} else {
 					msg = msg + delimiterchar + remoteIP;
 				}
-				
+
 				boolean preregistered = false;
 				Policy pol = ForestFishService.getPolicy();
 				Role role = null;
@@ -221,6 +222,24 @@ public class ForestFishV1RestService {
 				.build();
 	}
 
+	// curl -s -X GET "localhost:6969/api/forestfish/v1/ping"
+	@GET
+	@Path("v1/ping")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response v1_ping() {
+		LOGGER.info("v1_ping()");
+
+		return Response
+				.status(200)
+				.header("Access-Control-Allow-Origin", "*")
+				.header("Access-Control-Allow-Headers", "origin, content-type, accept, authorization")
+				.header("Access-Control-Allow-Credentials", "true")
+				.header("Access-Control-Allow-Methods", "GET, POST")
+				.header("Access-Control-Max-Age", "1209600")
+				.entity("{\"version\":\"v1\",\"pong\":true}")
+				.build();
+	}
+	
 	// curl -s -X POST "localhost:6969/api/forestfish/v1/authz" -H 'Content-Type: application/json' -d '{"version":"v1","challenge":"a2278ea3-4459-4ecd-8f05-b53c12ac0597","address":"0x12890d2cce102216644c59dae5baed380d84830c","signature":"0x16672d6205b5557e834a4c9e81e07475d396a13c6c7ef10c959133da4efdac200x1c7918ae6e3a308838b6a923874ff0ba1524c95f6a8db9a257f5264c1858834b1c"}'
 	@POST
 	@Path("/v1/authn")
@@ -659,6 +678,223 @@ public class ForestFishV1RestService {
 				.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 				.header("Access-Control-Max-Age", "1209600")
 				.entity(JSONUtils.createJSONFromPOJO(pb))
+				.build();
+	}
+
+	// curl -s -X POST "localhost:6969/api/forestfish/v1/policyupdate" -H 'Content-Type: application/json' --header "X-Secret: thesecret" -d '{"accounts":{"0x12890d2cce102216644c59dae5baed380d84830c":"CONTRIBUTOR"},"allowedCC":{"ALL":true},"blockchains_enabled":{"POLYGON":true,"ETHEREUM":true}}'
+	@POST
+	@Path("/v1/policyupdate")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response v1_policyupdate(@HeaderParam("X-Real-IP") String xrealIP, @HeaderParam("X-Secret") String secret, @Context HttpServletRequest request, String reqSTR) {
+		LOGGER.info("v1_policyupdate()");
+
+		Policy new_policy = JSONUtils.createPOJOFromJSON(reqSTR, Policy.class);
+		if (null != new_policy) {
+			String remoteIP = request.getRemoteAddr();
+			if ("[0:0:0:0:0:0:0:1]".equals(remoteIP)) remoteIP = "127.0.0.1";
+
+			if (null != xrealIP) {
+				if (NetUtils.isValidIPV4(xrealIP)) {
+					remoteIP = xrealIP;
+				}
+			}
+
+			if (null == secret) {
+				return Response
+						.status(403)
+						.header("Access-Control-Allow-Origin", "*")
+						.header("Access-Control-Allow-Headers", "origin, content-type, accept, authorization")
+						.header("Access-Control-Allow-Credentials", "true")
+						.header("Access-Control-Allow-Methods", "GET, POST")
+						.header("Access-Control-Max-Age", "1209600")
+						.entity("Policy updates requires a secret to be provided")
+						.build();
+			}
+
+			if (!ForestFishService.isAllow_policy_reconfig_over_rest()) {
+				return Response
+						.status(403)
+						.header("Access-Control-Allow-Origin", "*")
+						.header("Access-Control-Allow-Headers", "origin, content-type, accept, authorization")
+						.header("Access-Control-Allow-Credentials", "true")
+						.header("Access-Control-Allow-Methods", "GET, POST")
+						.header("Access-Control-Max-Age", "1209600")
+						.entity("Policy updates not allowed")
+						.build();
+			}
+
+			if (NetUtils.isValidIPV4(remoteIP)) {
+				String cc = ForestFishService.lookupCountryCodeForIP(remoteIP);
+				if (ForestFishService.isAllow_policy_reconfig_over_rest_from_rfc1918()) {
+					if (("RFC1918".equals(cc) || "LOCALHOST".equals(cc))) {
+						// ok
+					} else {
+						LOGGER.warn("Attempt to update policy using non RFC1918 address: " + remoteIP + " (cc:" + cc + ")");
+						return Response
+								.status(403)
+								.header("Access-Control-Allow-Origin", "*")
+								.header("Access-Control-Allow-Headers", "origin, content-type, accept, authorization")
+								.header("Access-Control-Allow-Credentials", "true")
+								.header("Access-Control-Allow-Methods", "GET, POST")
+								.header("Access-Control-Max-Age", "1209600")
+								.entity("Policy updates not allowed from non RFC1918")
+								.build();
+					}
+				}
+				LOGGER.info("v1_policyupdate() called with address=" + remoteIP + " cc=" + cc + " policyupdatesallowed: " + ForestFishService.isAllow_policy_reconfig_over_rest() + " rfc1918 restriction: " + ForestFishService.isAllow_policy_reconfig_over_rest_from_rfc1918() + " cc:" + cc);
+
+			} else {
+				return Response
+						.status(403)
+						.header("Access-Control-Allow-Origin", "*")
+						.header("Access-Control-Allow-Headers", "origin, content-type, accept, authorization")
+						.header("Access-Control-Allow-Credentials", "true")
+						.header("Access-Control-Allow-Methods", "GET, POST")
+						.header("Access-Control-Max-Age", "1209600")
+						.entity("Access Denied, invalid IP")
+						.build();
+			}
+
+		} else {
+			LOGGER.warn("Invalid POST request noted: " + reqSTR);
+			return Response
+					.status(403)
+					.header("Access-Control-Allow-Origin", "*")
+					.header("Access-Control-Allow-Headers", "origin, content-type, accept, authorization")
+					.header("Access-Control-Allow-Credentials", "true")
+					.header("Access-Control-Allow-Methods", "GET, POST")
+					.header("Access-Control-Max-Age", "1209600")
+					.entity("Access Denied, please behave")
+					.build();
+		}
+
+		if (ForestFishService.getSecret().equals(secret)) {
+			LOGGER.info("secret matches .. all good");
+
+			// Sanity check new ADMIN accounts
+			HashMap<String, Boolean> new_admin_accounts = new HashMap<>();
+			if (null == new_policy.getAccounts()) {
+				LOGGER.warn("No accounts provided in new policy, will deny the update");
+				return Response
+						.status(403)
+						.header("Access-Control-Allow-Origin", "*")
+						.header("Access-Control-Allow-Headers", "origin, content-type, accept, authorization")
+						.header("Access-Control-Allow-Credentials", "true")
+						.header("Access-Control-Allow-Methods", "GET, POST")
+						.header("Access-Control-Max-Age", "1209600")
+						.entity("Request denied, No ADMIN account provided in new policy")
+						.build();
+			} else {
+				for (String account: new_policy.getAccounts().keySet()) {
+					Role role = new_policy.getAccounts().get(account);
+					if (role == Role.ADMIN) new_admin_accounts.put(account, true);
+				}
+			}
+
+			if (new_admin_accounts.isEmpty()) {
+				LOGGER.warn("No ADMIN account provided in new policy, will deny the update");
+				return Response
+						.status(403)
+						.header("Access-Control-Allow-Origin", "*")
+						.header("Access-Control-Allow-Headers", "origin, content-type, accept, authorization")
+						.header("Access-Control-Allow-Credentials", "true")
+						.header("Access-Control-Allow-Methods", "GET, POST")
+						.header("Access-Control-Max-Age", "1209600")
+						.entity("Request denied, No ADMIN account provided in new policy")
+						.build();
+			}
+
+			// Grab existing ADMIN accounts
+			HashMap<String, Boolean> existing_admin_accounts = new HashMap<>();
+			if (null != ForestFishService.getPolicy().getAccounts()) {
+				for (String account: ForestFishService.getPolicy().getAccounts().keySet()) {
+					Role role = new_policy.getAccounts().get(account);
+					if (role == Role.ADMIN) existing_admin_accounts.put(account, true);
+				}
+			} else {
+				LOGGER.warn("No existing ADMIN accounts? Aborting ..");
+			}
+
+			boolean admin_accounts_align = false;
+			if (new_admin_accounts.size() > 0) {
+				if (new_admin_accounts.size() == existing_admin_accounts.size()) {
+					admin_accounts_align = true;
+					for (String existing_admin_account: existing_admin_accounts.keySet()) {
+						if (null == new_admin_accounts.get(existing_admin_account)) {
+							LOGGER.warn("Existing admin account " + existing_admin_account + " seems to have been removed?");
+							admin_accounts_align = false;
+						}
+					}
+				} else {
+					LOGGER.warn("The number of admin accounts does not add up");
+				}
+			} else {
+				LOGGER.warn("New policy does not have at least one ADMIN account");
+			}
+
+			if (admin_accounts_align) {
+				LOGGER.warn("ADMIN account match, will proceed with the update");
+				
+				// Update running instance with new policy
+				Policy updated_policy = ForestFishService.getPolicy();
+				updated_policy.setAccounts(new_policy.getAccounts());
+				ForestFishService.setPolicy(updated_policy);
+				LOGGER.info("Running ForestFISHd instance has been updated");
+				
+				// Flush new policy to disk
+				String json = JSONUtils.createJSONFromPOJO(updated_policy);
+				FilesUtils.writeToFileUNIXNoException(json, "ffpolicy.json");
+				LOGGER.info("New ForestFISHd policy flushed to disk");
+				
+				return Response
+						.status(200)
+						.header("Access-Control-Allow-Origin", "*")
+						.header("Access-Control-Allow-Headers", "origin, content-type, accept, authorization")
+						.header("Access-Control-Allow-Credentials", "true")
+						.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+						.header("Access-Control-Max-Age", "1209600")
+						.entity("Success")
+						.build();
+				
+			} else {
+				LOGGER.warn("ADMIN account mismatch, will deny the update");
+				return Response
+						.status(403)
+						.header("Access-Control-Allow-Origin", "*")
+						.header("Access-Control-Allow-Headers", "origin, content-type, accept, authorization")
+						.header("Access-Control-Allow-Credentials", "true")
+						.header("Access-Control-Allow-Methods", "GET, POST")
+						.header("Access-Control-Max-Age", "1209600")
+						.entity("Request denied, ADMIN account mismatch")
+						.build();
+			}
+		} else {
+			LOGGER.warn("Provided secret does not match!");
+			return Response
+					.status(403)
+					.header("Access-Control-Allow-Origin", "*")
+					.header("Access-Control-Allow-Headers", "origin, content-type, accept, authorization")
+					.header("Access-Control-Allow-Credentials", "true")
+					.header("Access-Control-Allow-Methods", "GET, POST")
+					.header("Access-Control-Max-Age", "1209600")
+					.entity("Access Denied, please behave")
+					.build();
+		}
+
+	}
+	
+	// CORS, https://localcoder.org/how-to-enable-cross-domain-requests-on-jax-rs-web-services
+	@OPTIONS
+	@Path("/v1/ping")
+	public Response ping_options() {
+		LOGGER.info("OPTIONS req for /v1/ping");
+		return Response.ok("")
+				.header("Access-Control-Allow-Origin", "*")
+				.header("Access-Control-Allow-Headers", "origin, content-type, accept, authorization")
+				.header("Access-Control-Allow-Credentials", "true")
+				.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, HEAD")
+				.header("Access-Control-Max-Age", "1209600")
 				.build();
 	}
 

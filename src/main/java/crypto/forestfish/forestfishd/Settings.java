@@ -13,6 +13,9 @@ public class Settings {
 	private String jwtSecret;
 	private boolean nftmode = false;
 	private boolean tokenmode = false;
+	
+	private boolean allow_policy_reconfig_over_rest = false;
+	private boolean allow_policy_reconfig_over_rest_from_rfc1918 = false;
 
 	public Settings() {
 		super();
@@ -48,6 +51,8 @@ public class Settings {
 		if (null != this.getJwtSecret()) System.out.println(" - jwtsecret length: " + this.getJwtSecret().length());
 		System.out.println(" - nftmode: " + this.isNftmode());
 		System.out.println(" - tokenmode: " + this.isTokenmode());
+		System.out.println(" - allow_policy_reconfig_over_rest: " + this.isAllow_policy_reconfig_over_rest());
+		System.out.println(" - allow_policy_reconfig_over_rest_from_rfc1918: " + this.isAllow_policy_reconfig_over_rest_from_rfc1918());
 	}
 
 	public boolean isTokenmode() {
@@ -56,6 +61,22 @@ public class Settings {
 
 	public void setTokenmode(boolean tokenmode) {
 		this.tokenmode = tokenmode;
+	}
+
+	public boolean isAllow_policy_reconfig_over_rest() {
+		return allow_policy_reconfig_over_rest;
+	}
+
+	public void setAllow_policy_reconfig_over_rest(boolean allow_policy_reconfig_over_rest) {
+		this.allow_policy_reconfig_over_rest = allow_policy_reconfig_over_rest;
+	}
+
+	public boolean isAllow_policy_reconfig_over_rest_from_rfc1918() {
+		return allow_policy_reconfig_over_rest_from_rfc1918;
+	}
+
+	public void setAllow_policy_reconfig_over_rest_from_rfc1918(boolean allow_policy_reconfig_over_rest_from_rfc1918) {
+		this.allow_policy_reconfig_over_rest_from_rfc1918 = allow_policy_reconfig_over_rest_from_rfc1918;
 	}
 
 	public void sanityCheck() {

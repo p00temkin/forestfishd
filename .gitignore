@@ -11,3 +11,4 @@ clients/js_axios_client/package-lock.json
 clients/js_axios_client/node_modules/*
 clients/js_axios_client/package-lock.json
 secret
+ffpolicy.json
