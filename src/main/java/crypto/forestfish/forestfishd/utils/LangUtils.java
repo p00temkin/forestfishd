@@ -7,6 +7,7 @@ import crypto.forestfish.forestfishd.model.policy.Policy;
 
 public class LangUtils {
 
+	@SuppressWarnings("unused")
 	private static final Logger LOGGER = LoggerFactory.getLogger(LangUtils.class);
 
 	public static String getCCGreeting(String _cc, Policy _policy) {

@@ -16,6 +16,8 @@ public class Settings {
 	
 	private boolean allow_policy_reconfig_over_rest = false;
 	private boolean allow_policy_reconfig_over_rest_from_rfc1918 = false;
+	
+	private boolean halt_on_rpc_errors = false;
 
 	public Settings() {
 		super();
@@ -53,6 +55,7 @@ public class Settings {
 		System.out.println(" - tokenmode: " + this.isTokenmode());
 		System.out.println(" - allow_policy_reconfig_over_rest: " + this.isAllow_policy_reconfig_over_rest());
 		System.out.println(" - allow_policy_reconfig_over_rest_from_rfc1918: " + this.isAllow_policy_reconfig_over_rest_from_rfc1918());
+		System.out.println(" - halt_on_rpc_errors: " + this.isHalt_on_rpc_errors());
 	}
 
 	public boolean isTokenmode() {
@@ -99,6 +102,14 @@ public class Settings {
 			SystemUtils.halt();
 		}
 
+	}
+
+	public boolean isHalt_on_rpc_errors() {
+		return halt_on_rpc_errors;
+	}
+
+	public void setHalt_on_rpc_errors(boolean halt_on_rpc_errors) {
+		this.halt_on_rpc_errors = halt_on_rpc_errors;
 	}
 
 }

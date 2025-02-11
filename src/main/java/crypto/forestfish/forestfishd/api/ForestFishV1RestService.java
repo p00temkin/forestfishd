@@ -3,7 +3,6 @@ package crypto.forestfish.forestfishd.api;
 import java.security.Key;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
@@ -301,7 +300,7 @@ public class ForestFishV1RestService {
 								if (null == ultra_connector) {
 									LOGGER.error("ultra_connector is null ..");
 								} else {
-									EVMPortfolio portfolio = EVMUtils.getEVMPortfolioForAccount(ultra_connector, address);
+									EVMPortfolio portfolio = EVMUtils.getEVMPortfolioForAccount(ultra_connector, address, ForestFishService.getSettings().isHalt_on_rpc_errors());
 
 									// NFT check
 									if (null != portfolio) {
@@ -317,12 +316,12 @@ public class ForestFishV1RestService {
 													}
 												}
 
-												if (null != portfolio.getChainportfolio().get(EVMChain.ETHEREUM)) {
-													if (!portfolio.getChainportfolio().get(EVMChain.ETHEREUM).getErc721tokens().isEmpty()) {
-														for (String nftName: portfolio.getChainportfolio().get(EVMChain.ETHEREUM).getErc721tokens().keySet()) {
-															EVMNftAccountBalance bal = portfolio.getChainportfolio().get(EVMChain.ETHEREUM).getErc721tokens().get(nftName);
+												if (null != portfolio.getChainportfolio().get(EVMChain.ETH)) {
+													if (!portfolio.getChainportfolio().get(EVMChain.ETH).getErc721tokens().isEmpty()) {
+														for (String nftName: portfolio.getChainportfolio().get(EVMChain.ETH).getErc721tokens().keySet()) {
+															EVMNftAccountBalance bal = portfolio.getChainportfolio().get(EVMChain.ETH).getErc721tokens().get(nftName);
 															System.out.println("ETHEREUM NFT ownership: " + nftName + " bal: " + bal.getBalance());
-															private_claims.put("nft_ownership:" + EVMChain.ETHEREUM.toString() + ":" + nftName, bal.getBalance());
+															private_claims.put("nft_ownership:" + EVMChain.ETH.toString() + ":" + nftName, bal.getBalance());
 														}
 													}
 												}
@@ -340,12 +339,12 @@ public class ForestFishV1RestService {
 													}
 												}
 
-												if (null != portfolio.getChainportfolio().get(EVMChain.ETHEREUM)) {
-													if (!portfolio.getChainportfolio().get(EVMChain.ETHEREUM).getErc20tokens().isEmpty()) {
-														for (String tokenName: portfolio.getChainportfolio().get(EVMChain.ETHEREUM).getErc20tokens().keySet()) {
-															EVMAccountBalance bal = portfolio.getChainportfolio().get(EVMChain.ETHEREUM).getErc20tokens().get(tokenName);
+												if (null != portfolio.getChainportfolio().get(EVMChain.ETH)) {
+													if (!portfolio.getChainportfolio().get(EVMChain.ETH).getErc20tokens().isEmpty()) {
+														for (String tokenName: portfolio.getChainportfolio().get(EVMChain.ETH).getErc20tokens().keySet()) {
+															EVMAccountBalance bal = portfolio.getChainportfolio().get(EVMChain.ETH).getErc20tokens().get(tokenName);
 															System.out.println("ETHEREUM ERC20 ownership: " + tokenName + " bal: " + bal.getBalanceInWEI());
-															private_claims.put("erc20_ownership:" + EVMChain.ETHEREUM.toString() + ":" + tokenName, bal.getBalanceInWEI());
+															private_claims.put("erc20_ownership:" + EVMChain.ETH.toString() + ":" + tokenName, bal.getBalanceInWEI());
 														}
 													}
 												}
@@ -547,7 +546,7 @@ public class ForestFishV1RestService {
 									if (null == ultra_connector) {
 										LOGGER.error("ultra_connector is null ..");
 									} else {
-										EVMPortfolio portfolio = EVMUtils.getEVMPortfolioForAccount(ultra_connector, address);
+										EVMPortfolio portfolio = EVMUtils.getEVMPortfolioForAccount(ultra_connector, address, ForestFishService.getSettings().isHalt_on_rpc_errors());
 
 										// NFT check
 										if (null != portfolio) {
@@ -563,12 +562,12 @@ public class ForestFishV1RestService {
 														}
 													}
 
-													if (null != portfolio.getChainportfolio().get(EVMChain.ETHEREUM)) {
-														if (!portfolio.getChainportfolio().get(EVMChain.ETHEREUM).getErc721tokens().isEmpty()) {
-															for (String nftName: portfolio.getChainportfolio().get(EVMChain.ETHEREUM).getErc721tokens().keySet()) {
-																EVMNftAccountBalance bal = portfolio.getChainportfolio().get(EVMChain.ETHEREUM).getErc721tokens().get(nftName);
+													if (null != portfolio.getChainportfolio().get(EVMChain.ETH)) {
+														if (!portfolio.getChainportfolio().get(EVMChain.ETH).getErc721tokens().isEmpty()) {
+															for (String nftName: portfolio.getChainportfolio().get(EVMChain.ETH).getErc721tokens().keySet()) {
+																EVMNftAccountBalance bal = portfolio.getChainportfolio().get(EVMChain.ETH).getErc721tokens().get(nftName);
 																System.out.println("ETHEREUM NFT ownership: " + nftName + " bal: " + bal.getBalance());
-																private_claims.put("nft_ownership:" + EVMChain.ETHEREUM.toString() + ":" + nftName, bal.getBalance());
+																private_claims.put("nft_ownership:" + EVMChain.ETH.toString() + ":" + nftName, bal.getBalance());
 															}
 														}
 													}
@@ -586,12 +585,12 @@ public class ForestFishV1RestService {
 														}
 													}
 
-													if (null != portfolio.getChainportfolio().get(EVMChain.ETHEREUM)) {
-														if (!portfolio.getChainportfolio().get(EVMChain.ETHEREUM).getErc20tokens().isEmpty()) {
-															for (String tokenName: portfolio.getChainportfolio().get(EVMChain.ETHEREUM).getErc20tokens().keySet()) {
-																EVMAccountBalance bal = portfolio.getChainportfolio().get(EVMChain.ETHEREUM).getErc20tokens().get(tokenName);
+													if (null != portfolio.getChainportfolio().get(EVMChain.ETH)) {
+														if (!portfolio.getChainportfolio().get(EVMChain.ETH).getErc20tokens().isEmpty()) {
+															for (String tokenName: portfolio.getChainportfolio().get(EVMChain.ETH).getErc20tokens().keySet()) {
+																EVMAccountBalance bal = portfolio.getChainportfolio().get(EVMChain.ETH).getErc20tokens().get(tokenName);
 																System.out.println("ETHEREUM ERC20 ownership: " + tokenName + " bal: " + bal.getBalanceInWEI());
-																private_claims.put("erc20_ownership:" + EVMChain.ETHEREUM.toString() + ":" + tokenName, bal.getBalanceInWEI());
+																private_claims.put("erc20_ownership:" + EVMChain.ETH.toString() + ":" + tokenName, bal.getBalanceInWEI());
 															}
 														}
 													}
@@ -834,7 +833,7 @@ public class ForestFishV1RestService {
 			}
 
 			if (admin_accounts_align) {
-				LOGGER.warn("ADMIN account match, will proceed with the update");
+				LOGGER.info("ADMIN account match, will proceed with the update");
 				
 				// Update running instance with new policy
 				Policy updated_policy = ForestFishService.getPolicy();

@@ -14,7 +14,7 @@ public class UtilsTest {
 		Policy p = new Policy();
 		String json = JSONUtils.createJSONFromPOJO(p);
 		System.out.println(json);
-		assertEquals("Ensure default config", "{\"accounts\":{},\"allowedCC\":{\"ALL\":true},\"blockchains_enabled\":{\"POLYGON\":true,\"ETHEREUM\":true}}", json);
+		assertEquals("Ensure default config", "{\"accounts\":{},\"allowedCC\":{\"ALL\":true},\"blockchains_enabled\":{\"POLYGON\":true,\"ETH\":true}}", json);
 	}
 
 }

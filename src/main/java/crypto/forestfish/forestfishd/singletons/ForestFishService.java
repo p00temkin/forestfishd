@@ -7,8 +7,6 @@ import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.web3j.crypto.CryptoUtils;
-
 import com.maxmind.db.CHMCache;
 import com.maxmind.db.Reader.FileMode;
 import com.maxmind.geoip2.DatabaseReader;
@@ -96,8 +94,9 @@ public class ForestFishService {
 			ultra_connector = new EVMBlockChainUltraConnector(BlockchainType.PUBLIC,
 					new HashMap<String, Boolean>() {{
 						this.put(EVMChain.POLYGON.toString(), true);
-						this.put(EVMChain.ETHEREUM.toString(), true);
-					}});
+						this.put(EVMChain.ETH.toString(), true);
+					}},
+					ForestFishService.getSettings().isHalt_on_rpc_errors());
 		}
 
 		/*
